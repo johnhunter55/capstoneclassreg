@@ -1,11 +1,11 @@
 import { useState } from "react";
 import "./App.css";
-import { Layout } from "./pages/Layout.jsx";
+import { AppRoutes } from "./assets/AppRoutes.jsx";
 
 function App() {
   return (
     <div>
-      <Layout />
+      <AppRoutes />
     </div>
   );
 }
