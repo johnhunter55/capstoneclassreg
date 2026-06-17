@@ -5,15 +5,15 @@ import morgan from "morgan";
 import cors from "cors";
 import passport from "passport";
 import connectDB from "./config/db.js"; // Note the .js extension
-import authRoutes from "./routes/authRoutes.js";
-import studentRoutes from "./routes/studentRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
+// import authRoutes from "./routes/authRoutes.js";
+// import studentRoutes from "./routes/studentRoutes.js";
+// import adminRoutes from "./routes/adminRoutes.js";
 
 // 2. Initialize App
 const app = express();
 
 // 3. Database Connection
-await connectDB();
+connectDB();
 
 // 4. Global Middleware
 app.use(morgan("dev"));
@@ -22,9 +22,9 @@ app.use(cors());
 app.use(passport.initialize());
 
 // 5. Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/students", studentRoutes);
-app.use("/api/admin", adminRoutes);
+// app.use("/api/auth", authRoutes);
+// app.use("/api/students", studentRoutes);
+// app.use("/api/admin", adminRoutes);
 
 // 6. Error Handling Middleware
 app.use((err, req, res, next) => {
@@ -33,5 +33,5 @@ app.use((err, req, res, next) => {
 });
 
 // 7. Server Listener
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
