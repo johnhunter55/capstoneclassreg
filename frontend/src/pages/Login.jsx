@@ -5,127 +5,148 @@ export function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
-  const handleAuthSubmit = (e) => {
+  // 1. State to hold the form inputs
+  const [formData, setFormData] = useState({
+    email: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // 2. Update state when user types
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // 3. Send the data to your backend
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
-    // Simulate successful login/signup by storing a flag in localStorage
-    localStorage.setItem("isAuthenticated", "true");
-    navigate("/"); // Redirect to the protected home page
+    setErrorMsg("");
+
+    // Decide which URL to hit based on the toggle
+    const endpoint = isLogin
+      ? "http://localhost:5000/api/login"
+      : "http://localhost:5000/api/signup";
+
+    // Basic validation for signup
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      return setErrorMsg("Passwords do not match!");
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          username: formData.username,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success! Store auth token/flag and redirect
+        localStorage.setItem("isAuthenticated", "true");
+        navigate("/");
+      } else {
+        // Show the error from the backend
+        setErrorMsg(data.error || "Something went wrong.");
+      }
+    } catch (error) {
+      setErrorMsg("Failed to connect to the server.");
+    }
   };
 
   return (
     <div className="flex justify-center items-center h-screen w-full bg-neutral-900">
-      {isLogin ? (
-        <form
-          id="login-form"
-          onSubmit={handleAuthSubmit}
-          className="sm:max-w-lg sm:px-15 sm:h-auto sm:py-34 sm:rounded-2xl bg-rose-900 text-amber-50 flex flex-col p-10 w-full h-full pt-20"
-        >
-          <h2 className="text-2xl/tight font-bold text-olive-200">
-            Welcome Back!
-          </h2>
-          <p className="text-lg mb-10 text-olive-300/90">
-            Log back into to your account:
-          </p>
-          <input
-            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 focus-within:hover:bg-rose-950 outline-none"
-            type="text"
-            id="login-username"
-            placeholder="username"
-            required
-          />
-          <input
-            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 focus-within:hover:bg-rose-950 outline-none"
-            type="password"
-            id="login-password"
-            placeholder="Password"
-            required
-          />
-          <p id="login-error" className="text-red-400 text-sm mb-4 hidden">
-            Invalid name or password. Please try again.
-          </p>
-          <button
-            className="p-4 bg-rose-500 font rounded-2xl my-5 text-xl hover:bg-rose-700/50 hover:shadow-2xl cursor-pointer"
-            type="submit"
-          >
-            Login
-          </button>
-          <p>
-            Don't have an account?
-            <a
-              className="text-orange-500 pl-1"
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsLogin(false);
-              }}
-            >
-              Sign up
-            </a>
-          </p>
-        </form>
-      ) : (
-        <form
-          id="signup-form"
-          onSubmit={handleAuthSubmit}
-          className="sm:max-w-lg sm:px-15 sm:h-auto sm:py-34 sm:rounded-2xl bg-rose-900 text-amber-50 flex flex-col p-10 w-full h-full pt-20"
-        >
-          <h2 className="text-2xl/tight font-bold text-olive-300">Join Us!</h2>
-          <p className="text-lg mb-10 text-olive-300/80">
-            Create your finance account:
-          </p>
+      <form
+        onSubmit={handleAuthSubmit}
+        className="sm:max-w-lg sm:px-15 sm:h-auto sm:py-34 sm:rounded-2xl bg-rose-900 text-amber-50 flex flex-col p-10 w-full h-full pt-20"
+      >
+        <h2 className="text-2xl/tight font-bold text-olive-300">
+          {isLogin ? "Welcome Back!" : "Join Us!"}
+        </h2>
+        <p className="text-lg mb-10 text-olive-300/80">
+          {isLogin
+            ? "Log back into your account:"
+            : "Create your finance account:"}
+        </p>
 
+        {/* Only show email field if signing up */}
+        {!isLogin && (
           <input
-            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 focus-within:hover:bg-rose-950 outline-none"
-            type="text"
-            id="signup-email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 outline-none"
+            type="email"
             placeholder="email"
-            required
+            required={!isLogin}
           />
+        )}
+
+        <input
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
+          className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 outline-none"
+          type="text"
+          placeholder="username"
+          required
+        />
+
+        <input
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 outline-none"
+          type="password"
+          placeholder="Password"
+          required
+        />
+
+        {/* Only show confirm password field if signing up */}
+        {!isLogin && (
           <input
-            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 focus-within:hover:bg-rose-950 outline-none"
-            type="text"
-            id="signup-username"
-            placeholder="username"
-            required
-          />
-          <input
-            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 focus-within:hover:bg-rose-950 outline-none"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 outline-none"
             type="password"
-            id="signup-password"
-            placeholder="Password"
-            required
-          />
-          <input
-            className="bg-rose-950 p-2 pl-4 rounded-2xl my-1 border border-transparent hover:bg-rose-950/80 focus-within:border-rose-950 focus-within:bg-rose-950 focus-within:hover:bg-rose-950 outline-none"
-            type="password"
-            id="signup-confirm"
             placeholder="Confirm Password"
-            required
+            required={!isLogin}
           />
-          <p id="signup-error" className="text-red-400 text-sm mb-4 hidden"></p>
+        )}
 
+        {/* Display dynamic error message */}
+        {errorMsg && (
+          <p className="text-red-400 text-sm mt-2 mb-4">{errorMsg}</p>
+        )}
+
+        <button
+          className="p-4 bg-rose-500 font rounded-2xl my-5 text-xl hover:bg-rose-700/50 hover:shadow-2xl cursor-pointer transition-all duration-200"
+          type="submit"
+        >
+          {isLogin ? "Login" : "Create Account"}
+        </button>
+
+        <p>
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
           <button
-            className="p-4 bg-rose-500 font rounded-2xl my-5 text-xl hover:bg-rose-700/50 hover:shadow-2xl cursor-pointer transition-all duration-200"
-            type="submit"
+            type="button"
+            className={isLogin ? "text-orange-500 pl-1" : "text-amber-500 pl-1"}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setErrorMsg(""); // Clear errors when switching modes
+            }}
           >
-            Create Account
+            {isLogin ? "Sign up" : "Login"}
           </button>
-
-          <p>
-            Already have an account?
-            <a
-              className="text-amber-500 pl-1"
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsLogin(true);
-              }}
-            >
-              Login
-            </a>
-          </p>
-        </form>
-      )}
+        </p>
+      </form>
     </div>
   );
 }
