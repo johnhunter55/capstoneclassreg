@@ -1,0 +1,16 @@
+{
+  "name": "new-capstone",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "node": "16.14.0"
+  },
+  "scripts": {
+    "build": "cd server && npm i && cd ./frontend && npm i && npm run build",
+    "start": "node server/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
