@@ -4,8 +4,10 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import passport from "passport";
-import connectDB from "./config/db.js"; // Note the .js extension
-// import authRoutes from "./routes/authRoutes.js";
+import connectDB from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js"; // <-- UNCOMMENTED THIS
+
+// (Leave these commented out until you actually build them)
 // import studentRoutes from "./routes/studentRoutes.js";
 // import adminRoutes from "./routes/adminRoutes.js";
 
@@ -22,7 +24,9 @@ app.use(cors());
 app.use(passport.initialize());
 
 // 5. Routes
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes); // <-- UNCOMMENTED THIS
+
+// (Leave these commented out until you actually build them)
 // app.use("/api/students", studentRoutes);
 // app.use("/api/admin", adminRoutes);
 

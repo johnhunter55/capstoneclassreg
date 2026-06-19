@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       minlength: 6,
     },
+    isAdmin: {
+      // <-- ADD THIS NEW FIELD
+      type: Boolean,
+      default: false, // Defaults to false for normal users
+    },
     address: {
       street: { type: String, trim: true },
       city: { type: String, trim: true },
@@ -34,16 +39,13 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  // If the password isn't modified, just exit the function (no next needed!)
+  if (!this.isModified("password")) return;
 
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  // Mongoose automatically catches errors in async functions, so no try/catch needed
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 const User = mongoose.model("User", userSchema);

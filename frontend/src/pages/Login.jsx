@@ -29,8 +29,8 @@ export function Login() {
 
     // Decide which URL to hit based on the toggle
     const endpoint = isLogin
-      ? "http://localhost:5000/api/login"
-      : "http://localhost:5000/api/signup";
+      ? "http://localhost:3002/api/auth/login"
+      : "http://localhost:3002/api/auth/signup";
 
     // Basic validation for signup
     if (!isLogin && formData.password !== formData.confirmPassword) {
@@ -43,8 +43,9 @@ export function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
-          username: formData.username,
+          name: formData.username,
           password: formData.password,
+          adminCode: formData.adminCode,
         }),
       });
 
