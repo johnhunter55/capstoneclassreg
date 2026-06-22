@@ -19,7 +19,6 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
     },
     isAdmin: {
-      // <-- ADD THIS NEW FIELD
       type: Boolean,
       default: false, // Defaults to false for normal users
     },

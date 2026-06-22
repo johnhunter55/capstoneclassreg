@@ -54,6 +54,7 @@ export function Login() {
       if (response.ok) {
         // Success! Store auth token/flag and redirect
         localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userName", data.user.name);
         navigate("/");
       } else {
         // Show the error from the backend
@@ -74,9 +75,7 @@ export function Login() {
           {isLogin ? "Welcome Back!" : "Join Us!"}
         </h2>
         <p className="text-lg mb-10 text-olive-300/80">
-          {isLogin
-            ? "Log back into your account:"
-            : "Create your finance account:"}
+          {isLogin ? "Log back into your account:" : "Create your account:"}
         </p>
 
         {/* Only show email field if signing up */}

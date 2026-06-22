@@ -7,8 +7,11 @@ export function Header() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
+  const userName = localStorage.getItem("userName") || "User";
+
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userName");
     navigate("/login");
   };
 
@@ -19,7 +22,7 @@ export function Header() {
           onClick={() => setShowModal(!showModal)}
           className="text-2xl font-bold text-neutral-900 dark:text-white cursor-pointer select-none bg-gray-100 dark:bg-neutral-800 px-6 py-2 rounded-xl hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
         >
-          Molly Little
+          {userName}
         </h1>
         <div className="flex items-center gap-4">
           <ThemeToggle />
