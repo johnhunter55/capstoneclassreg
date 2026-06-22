@@ -1,7 +1,9 @@
 import express from "express";
-import jwt, { TokenExpiredError } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import User from "../models/User.js"; // Adjust this path if your model is in a different folder
 import bcrypt from "bcrypt";
+
+const { TokenExpiredError } = jwt;
 
 const router = express.Router();
 
