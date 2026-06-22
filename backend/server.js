@@ -4,8 +4,9 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import passport from "passport";
+import { applyPassportStrategy } from "./config/passport.js";
 import connectDB from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js"; // <-- UNCOMMENTED THIS
+import authRoutes from "./routes/authRoutes.js";
 
 // (Leave these commented out until you actually build them)
 // import studentRoutes from "./routes/studentRoutes.js";
@@ -22,6 +23,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(cors());
 app.use(passport.initialize());
+applyPassportStrategy(passport);
 
 // 5. Routes
 app.use("/api/auth", authRoutes); // <-- UNCOMMENTED THIS

@@ -1,4 +1,5 @@
 import express from "express";
+import jwt, { TokenExpiredError } from "jsonwebtoken";
 import User from "../models/User.js"; // Adjust this path if your model is in a different folder
 import bcrypt from "bcrypt";
 
@@ -70,9 +71,21 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid username or password." });
     }
 
+    // generate JWT Token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        username: user.username,
+        isAdmin: user.isAdmin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "Id" },
+    );
+
     // Success! Send back the user data
     res.status(200).json({
       message: "Login successful!",
+      token: `Bearer ${token}`,
       user: {
         id: user._id,
         username: user.username,
