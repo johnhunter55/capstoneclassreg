@@ -1,13 +1,13 @@
 import express from "express";
 import User from "../models/User.js"; // Adjust this path if your model is in a different folder
+import bcrypt from "bcrypt";
 
 const router = express.Router();
 
 // Route: POST /api/auth/signup
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, adminCode } = req.body;
-
+    const { username, email, password, adminCode } = req.body; // <-- Added username
     // 1. Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -26,7 +26,7 @@ router.post("/signup", async (req, res) => {
 
     // 3. Create the new user
     const newUser = new User({
-      name,
+      username, // <-- Added username
       email,
       password,
       isAdmin: isUserAdmin,
@@ -45,29 +45,41 @@ router.post("/signup", async (req, res) => {
 // Route: POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
     // 1. Check if the user exists
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ username });
+
+    // 🔍 DEBUG LOG #1
+    console.log("--- LOGIN DEBUG ---");
+    console.log("Frontend sent username:", username);
+    console.log("Database found user?:", user ? "YES" : "NO");
+
     if (!user) {
-      // Notice we say "Invalid email or password" so hackers don't know which one they got wrong!
-      return res.status(400).json({ error: "Invalid email or password." });
+      return res.status(400).json({ error: "Invalid username or password." });
     }
 
-    // 2. Compare the typed password with the hashed password in the database
+    // 2. Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
+
+    // 🔍 DEBUG LOG #2
+    console.log("Password matched?:", isMatch);
+    console.log("-------------------");
+
     if (!isMatch) {
-      return res.status(400).json({ error: "Invalid email or password." });
+      return res.status(400).json({ error: "Invalid username or password." });
     }
 
-    // 3. Success! Send back the user data
+    // Success! Send back the user data
     res.status(200).json({
       message: "Login successful!",
       user: {
         id: user._id,
-        name: user.name,
+        username: user.username,
         email: user.email,
         isAdmin: user.isAdmin,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
       },
     });
   } catch (error) {

@@ -7,11 +7,29 @@ export function Header() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
-  const userName = localStorage.getItem("userName") || "User";
+  // 1. Safely grab the full user object and parse out the username
+  const getUsername = () => {
+    const storedUserString = localStorage.getItem("user");
+
+    // Protect against empty storage or the literal "undefined" string
+    if (!storedUserString || storedUserString === "undefined") {
+      return "User";
+    }
+
+    try {
+      const parsedUser = JSON.parse(storedUserString);
+      return parsedUser.username || "User"; // Returns the username
+    } catch (error) {
+      return "User";
+    }
+  };
+
+  const userName = getUsername();
 
   const handleLogout = () => {
+    // 2. FIXED: Clear the "user" object from storage instead of "userName"
     localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userName");
+    localStorage.removeItem("user");
     navigate("/login");
   };
 

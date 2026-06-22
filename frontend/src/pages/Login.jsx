@@ -37,27 +37,33 @@ export function Login() {
       return setErrorMsg("Passwords do not match!");
     }
 
+    // FIXED: Construct a clean body depending on if we are logging in or signing up
+    const payload = isLogin
+      ? {
+          username: formData.username,
+          password: formData.password,
+        }
+      : {
+          username: formData.username, // Passes username into the required database 'name' field
+          email: formData.email,
+          password: formData.password,
+          adminCode: formData.adminCode,
+        };
+
     try {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          name: formData.username,
-          password: formData.password,
-          adminCode: formData.adminCode,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Success! Store auth token/flag and redirect
         localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("userName", data.user.name);
+        localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/");
       } else {
-        // Show the error from the backend
         setErrorMsg(data.error || "Something went wrong.");
       }
     } catch (error) {
