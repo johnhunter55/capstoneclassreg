@@ -56,13 +56,13 @@ export function Header() {
         {showModal && <Modal onClose={() => setShowModal(false)} />}
       </div>
       <div class="p-3 flex gap-2">
-        <a className="bg-olive-800 p-1 px-4 rounded-2xl text-lg hover:bg-olive-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
+        <a className="bg-rose-950 p-1 px-4 rounded-2xl text-lg hover:bg-rose-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
           Dashboard
         </a>
-        <a className="bg-olive-800 p-1 px-4 rounded-2xl text-lg hover:bg-olive-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
+        <a className="bg-rose-950 p-1 px-4 rounded-2xl text-lg hover:bg-rose-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
           Sign Up
         </a>
-        <a className="bg-olive-800 p-1 px-4 rounded-2xl text-lg hover:bg-olive-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
+        <a className="bg-rose-950 p-1 px-4 rounded-2xl text-lg hover:bg-rose-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
           Admin Control
         </a>
       </div>

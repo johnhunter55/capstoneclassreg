@@ -71,6 +71,55 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid username or password." });
     }
 
+    // Route: PUT /api/auth/update
+    router.put("/update", async (req, res) => {
+      try {
+        const { userId, username, name, email, phone, address } = req.body;
+
+        // 1. Find the user by ID and update their information in MongoDB
+        const updatedUser = await User.findByIdAndUpdate(
+          userId,
+          {
+            username,
+            name,
+            email,
+            phoneNumber: phone, // Maps 'phone' from frontend to 'phoneNumber' in DB
+            address: {
+              street: address.street,
+              city: address.city,
+              state: address.state,
+              zipCode: address.zipCode,
+              country: "USA",
+            },
+          },
+          { new: true }, // This option tells Mongoose to return the freshly updated document
+        );
+
+        if (!updatedUser) {
+          return res.status(404).json({ error: "User not found." });
+        }
+
+        // 2. Success! Send back the brand new user data to the frontend
+        res.status(200).json({
+          message: "Profile updated successfully!",
+          user: {
+            id: updatedUser._id,
+            username: updatedUser.username,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            isAdmin: updatedUser.isAdmin,
+            phoneNumber: updatedUser.phoneNumber,
+            address: updatedUser.address,
+          },
+        });
+      } catch (error) {
+        console.error("Database update error:", error);
+        res
+          .status(500)
+          .json({ error: "Server error. Failed to update profile." });
+      }
+    });
+
     // generate JWT Token
     const token = jwt.sign(
       {

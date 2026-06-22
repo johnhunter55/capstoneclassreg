@@ -3,8 +3,8 @@ import { BsFillPencilFill, BsFillXCircleFill } from "react-icons/bs";
 
 export function Modal({ onClose }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [userId, setUserId] = useState(""); // <-- ADDED: Track user ID for DB queries
 
-  // 1. Single unified state tracking identity details
   const [userData, setUserData] = useState({
     username: "",
     name: "",
@@ -12,7 +12,6 @@ export function Modal({ onClose }) {
     phone: "",
   });
 
-  // 2. Structured address tracking object
   const [addressData, setAddressData] = useState({
     street: "",
     city: "",
@@ -20,7 +19,6 @@ export function Modal({ onClose }) {
     zipCode: "",
   });
 
-  // Pull existing records from localStorage on mount
   useEffect(() => {
     const storedUserString = localStorage.getItem("user");
 
@@ -28,6 +26,7 @@ export function Modal({ onClose }) {
       try {
         const storedUser = JSON.parse(storedUserString);
 
+        setUserId(storedUser.id || ""); // <-- ADDED: Extract and save the user ID
         setUserData({
           username: storedUser.username || "",
           name: storedUser.name || "",
@@ -49,7 +48,6 @@ export function Modal({ onClose }) {
     }
   }, []);
 
-  // Form Change Handlers
   const handleUserChange = (e) => {
     const { name, value } = e.target;
     setUserData((prev) => ({ ...prev, [name]: value }));
@@ -60,40 +58,60 @@ export function Modal({ onClose }) {
     setAddressData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Format full address for preview card
   const getFormattedAddress = () => {
     const { street, city, state, zipCode } = addressData;
     if (!street && !city) return "Add";
     return `${street}, ${city}, ${state} ${zipCode}`.trim();
   };
 
-  // Compile full object back to storage
-  const handleSaveChanges = () => {
-    const updatedUserObj = {
+  // FIXED: Turned into an async function that communicates with MongoDB
+  const handleSaveChanges = async () => {
+    const payload = {
+      userId: userId, // Tells the backend exactly who is updating
       username: userData.username,
       name: userData.name,
       email: userData.email,
-      phoneNumber: userData.phone,
+      phone: userData.phone,
       address: {
         street: addressData.street,
         city: addressData.city,
         state: addressData.state,
         zipCode: addressData.zipCode,
-        country: "USA",
       },
     };
 
-    localStorage.setItem("user", JSON.stringify(updatedUserObj));
-    setIsEditing(false);
+    try {
+      const response = await fetch("http://localhost:3002/api/auth/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    // Optional: If you want to force your header component to update immediately
-    // without manual refresh, you can trigger a lightweight storage window event
-    window.dispatchEvent(new Event("storage"));
+      const data = await response.json();
+
+      if (response.ok) {
+        // 1. Overwrite localStorage with the clean, verified data back from MongoDB
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // 2. Close the editor panel
+        setIsEditing(false);
+
+        // 3. Inform the rest of the application (like the Header component) to re-render
+        window.dispatchEvent(new Event("storage"));
+
+        alert("Profile saved to database successfully!");
+      } else {
+        alert(data.error || "Failed to update profile on the server.");
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Could not connect to the server.");
+    }
   };
 
   return (
     <>
-      {/* SIDE VIEW CARD: Kept in its relative anchor space for quick reading */}
+      {/* SIDE VIEW CARD */}
       <div className="absolute w-96 bg-rose-900 p-4 rounded-2xl shadow-lg flex gap-2 flex-col mt-2 ml-2 z-40">
         <div className="flex items-center w-full pb-2 border-b border-rose-700">
           <h1 className="text-2xl text-white font-mono">Profile info</h1>
@@ -140,7 +158,7 @@ export function Modal({ onClose }) {
       {/* CENTERED EDIT MODAL POP-UP OVERLAY */}
       {isEditing && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-rose-900 p-6 rounded-2xl shadow-2xl border border-rose-700 w-full max-w-lg flex flex-col gap-4 max-h-[95vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-rose-900 p-6 rounded-2xl shadow-2xl border border-rose-700 w-full max-w-lg flex flex-col gap-4 max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-rose-800 pb-3">
               <h2 className="text-2xl text-white font-mono font-bold">
                 Edit Profile Dashboard
@@ -152,7 +170,6 @@ export function Modal({ onClose }) {
             </div>
 
             <div className="flex flex-col gap-4">
-              {/* Account Core Profile Fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-rose-300 tracking-wider uppercase block mb-1">
@@ -209,7 +226,6 @@ export function Modal({ onClose }) {
 
               <hr className="border-rose-800/60 my-1" />
 
-              {/* Explicit Address Object Mapping Group */}
               <h3 className="text-md font-mono font-semibold text-rose-200 -mb-1">
                 Mailing Address Object
               </h3>
@@ -269,7 +285,6 @@ export function Modal({ onClose }) {
               </div>
             </div>
 
-            {/* Save Controls Action */}
             <div className="flex gap-3 justify-end mt-4 pt-3 border-t border-rose-800">
               <button
                 onClick={() => setIsEditing(false)}
