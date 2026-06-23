@@ -1,9 +1,22 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Modal } from "./Modal.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
+import { useNavigate, NavLink } from "react-router-dom";
 
 export function Header() {
+  const linkStyles = ({ isActive }) => {
+    const baseStyles =
+      "p-1 px-4 rounded-2xl text-lg transition-all duration-200 cursor-pointer";
+
+    const activeStyles =
+      "bg-rose-600 dark:bg-rose-700 text-white font-bold shadow-md";
+
+    const inactiveStyles =
+      "bg-rose-800 dark:bg-rose-950 text-rose-200 hover:bg-rose-700/50 hover:text-white";
+
+    return `${baseStyles} ${isActive ? activeStyles : inactiveStyles}`;
+  };
+
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
@@ -55,16 +68,16 @@ export function Header() {
         </header>
         {showModal && <Modal onClose={() => setShowModal(false)} />}
       </div>
-      <div class="p-3 flex gap-2">
-        <a className="bg-rose-950 p-1 px-4 rounded-2xl text-lg hover:bg-rose-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
+      <div className="p-3 flex gap-2">
+        <NavLink to="/" className={linkStyles} end>
           Dashboard
-        </a>
-        <a className="bg-rose-950 p-1 px-4 rounded-2xl text-lg hover:bg-rose-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
+        </NavLink>
+        <NavLink to="/signup" className={linkStyles}>
           Sign Up
-        </a>
-        <a className="bg-rose-950 p-1 px-4 rounded-2xl text-lg hover:bg-rose-700/50 hover:shadow-lg cursor-pointer transition-all duration-200">
+        </NavLink>
+        <NavLink to="/admin" className={linkStyles}>
           Admin Control
-        </a>
+        </NavLink>
       </div>
     </div>
   );

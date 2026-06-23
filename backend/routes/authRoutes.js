@@ -1,43 +1,38 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js"; // Adjust this path if your model is in a different folder
+import User from "../models/User.js";
 import bcrypt from "bcrypt";
 
 const { TokenExpiredError } = jwt;
-
 const router = express.Router();
 
-// Route: POST /api/auth/signup
+// ==========================================
+// 1. ROUTE: POST /api/auth/signup
+// ==========================================
 router.post("/signup", async (req, res) => {
   try {
-    const { username, email, password, adminCode } = req.body; // <-- Added username
-    // 1. Check if user already exists
+    const { username, email, password, adminCode } = req.body;
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "Email already in use." });
     }
 
-    // 2. Check the admin code
     let isUserAdmin = false;
-
-    // Make sure ADMIN_SECRET is in your .env file!
     if (adminCode === process.env.ADMIN_SECRET) {
       isUserAdmin = true;
     } else if (adminCode && adminCode.trim() !== "") {
       return res.status(401).json({ error: "Invalid admin code." });
     }
 
-    // 3. Create the new user
     const newUser = new User({
-      username, // <-- Added username
+      username,
       email,
       password,
       isAdmin: isUserAdmin,
     });
 
-    // (Your User model's "pre-save" hook will automatically hash the password here!)
     await newUser.save();
-
     res.status(201).json({ message: "Account created successfully!" });
   } catch (error) {
     console.error("Signup error:", error);
@@ -45,15 +40,15 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// Route: POST /api/auth/login
+// ==========================================
+// 2. ROUTE: POST /api/auth/login
+// ==========================================
 router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // 1. Check if the user exists
     const user = await User.findOne({ username });
 
-    // 🔍 DEBUG LOG #1
     console.log("--- LOGIN DEBUG ---");
     console.log("Frontend sent username:", username);
     console.log("Database found user?:", user ? "YES" : "NO");
@@ -62,10 +57,8 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid username or password." });
     }
 
-    // 2. Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
 
-    // 🔍 DEBUG LOG #2
     console.log("Password matched?:", isMatch);
     console.log("-------------------");
 
@@ -73,56 +66,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid username or password." });
     }
 
-    // Route: PUT /api/auth/update
-    router.put("/update", async (req, res) => {
-      try {
-        const { userId, username, name, email, phone, address } = req.body;
-
-        // 1. Find the user by ID and update their information in MongoDB
-        const updatedUser = await User.findByIdAndUpdate(
-          userId,
-          {
-            username,
-            name,
-            email,
-            phoneNumber: phone, // Maps 'phone' from frontend to 'phoneNumber' in DB
-            address: {
-              street: address.street,
-              city: address.city,
-              state: address.state,
-              zipCode: address.zipCode,
-              country: "USA",
-            },
-          },
-          { new: true }, // This option tells Mongoose to return the freshly updated document
-        );
-
-        if (!updatedUser) {
-          return res.status(404).json({ error: "User not found." });
-        }
-
-        // 2. Success! Send back the brand new user data to the frontend
-        res.status(200).json({
-          message: "Profile updated successfully!",
-          user: {
-            id: updatedUser._id,
-            username: updatedUser.username,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            isAdmin: updatedUser.isAdmin,
-            phoneNumber: updatedUser.phoneNumber,
-            address: updatedUser.address,
-          },
-        });
-      } catch (error) {
-        console.error("Database update error:", error);
-        res
-          .status(500)
-          .json({ error: "Server error. Failed to update profile." });
-      }
-    });
-
-    // generate JWT Token
+    // Generate JWT Token
     const token = jwt.sign(
       {
         id: user._id,
@@ -130,10 +74,9 @@ router.post("/login", async (req, res) => {
         isAdmin: user.isAdmin,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "Id" },
+      { expiresIn: "1d" }, // Fixed typo: changed "Id" to "1d" (1 day)
     );
 
-    // Success! Send back the user data
     res.status(200).json({
       message: "Login successful!",
       token: `Bearer ${token}`,
@@ -149,6 +92,53 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Server error. Please try again." });
+  }
+});
+
+// ==========================================
+// 3. FIXED: ROUTE: PUT /api/auth/update (Now standalone!)
+// ==========================================
+router.put("/update", async (req, res) => {
+  try {
+    const { userId, username, name, email, phone, address } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        username,
+        name,
+        email,
+        phoneNumber: phone,
+        address: {
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: "USA",
+        },
+      },
+      { new: true },
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.status(200).json({
+      message: "Profile updated successfully!",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        isAdmin: updatedUser.isAdmin,
+        phoneNumber: updatedUser.phoneNumber,
+        address: updatedUser.address,
+      },
+    });
+  } catch (error) {
+    console.error("Database update error:", error);
+    res.status(500).json({ error: "Server error. Failed to update profile." });
   }
 });
 

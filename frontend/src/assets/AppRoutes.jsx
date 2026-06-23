@@ -4,6 +4,8 @@ import { Layout } from "../pages/Layout.jsx";
 import { Login } from "../pages/Login.jsx";
 import { Home } from "../pages/Home.jsx";
 
+import { Signup } from "../pages/Signup.jsx";
+import { Admincontrols } from "../pages/Admincontrols.jsx";
 // Checks localStorage to see if user is "logged in"
 function ProtectedRoute({ children }) {
   const isAuthenticated = localStorage.getItem("isAuthenticated");
@@ -23,6 +25,8 @@ export function AppRoutes() {
         }
       >
         <Route index element={<Home />} />
+        <Route path="signup" element={<Signup />} />
+        <Route path="admin" element={<Admincontrols />} />
       </Route>
     </Routes>
   );
