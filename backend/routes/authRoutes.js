@@ -33,7 +33,23 @@ router.post("/signup", async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ message: "Account created successfully!" });
+
+    const token = jwt.sign(
+      { id: newUser._id, username: newUser.username, isAdmin: newUser.isAdmin },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
+
+    res.status(201).json({
+      message: "Account created successfully!",
+      token: `Bearer ${token}`,
+      user: {
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+        isAdmin: newUser.isAdmin,
+      },
+    });
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({ error: "Server error. Please try again." });
