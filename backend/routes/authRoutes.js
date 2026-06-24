@@ -190,4 +190,35 @@ router.put("/update", protect, async (req, res) => {
   }
 });
 
+// ... keeping all your signup, login, and update routes exactly as they are ...
+
+// ==========================================
+// 4. ROUTE: GET /api/auth/me (Verifies token & returns real DB data)
+// ==========================================
+router.get("/me", protect, async (req, res) => {
+  try {
+    // req.userId was safely extracted from the secure cookie by the 'protect' middleware
+    const user = await User.findById(req.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Send back the absolute source of truth from MongoDB
+    res.status(200).json({
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+      },
+    });
+  } catch (error) {
+    console.error("Session verification error:", error);
+    res.status(500).json({ error: "Server error validating session." });
+  }
+});
+
 export default router;
