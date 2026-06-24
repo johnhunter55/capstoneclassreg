@@ -67,9 +67,10 @@ export function Modal({ onClose }) {
 
   // FIXED: Turned into an async function that communicates with MongoDB
   const handleSaveChanges = async () => {
-    setErrorMsg(""); // Clear previous errors
+    setErrorMsg("");
+
     const payload = {
-      userId: userId, // Tells the backend exactly who is updating
+      // userId parameter has been safely removed from client-side visibility!
       username: userData.username,
       name: userData.name,
       email: userData.email,
@@ -86,6 +87,7 @@ export function Modal({ onClose }) {
       const response = await fetch("http://localhost:3002/api/auth/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // <-- FIXED: Automatically forwards login cookie back to system
         body: JSON.stringify(payload),
       });
 

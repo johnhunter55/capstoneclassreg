@@ -4,6 +4,7 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import passport from "passport";
+import cookieParser from "cookie-parser"; // FIXED: Changed from require to import
 import { applyPassportStrategy } from "./config/passport.js";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -17,11 +18,17 @@ const app = express();
 
 // 3. Database Connection
 connectDB();
+app.use(cookieParser());
 
 // 4. Global Middleware
 app.use(morgan("dev"));
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // <-- Change this to match your exact frontend URL/port
+    credentials: true, // <-- Crucial for allowing cookies
+  }),
+);
 app.use(passport.initialize());
 applyPassportStrategy(passport);
 

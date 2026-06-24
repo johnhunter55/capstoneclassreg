@@ -54,6 +54,7 @@ export function Login() {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // <-- FIXED: Tells browser to capture secure cookie payload
         body: JSON.stringify(payload),
       });
 

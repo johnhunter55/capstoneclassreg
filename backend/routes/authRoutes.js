@@ -6,6 +6,22 @@ import bcrypt from "bcrypt";
 const { TokenExpiredError } = jwt;
 const router = express.Router();
 
+const protect = async (req, res, next) => {
+  const token = req.cookies.token; // Grab token from cookies container
+
+  if (!token) {
+    return res.status(401).json({ error: "Not authorized, please login." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id; // Attach user ID to request object
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: "Session expired or invalid token." });
+  }
+};
+
 // ==========================================
 // 1. ROUTE: POST /api/auth/signup
 // ==========================================
@@ -14,13 +30,12 @@ router.post("/signup", async (req, res) => {
     const { username, email, password, adminCode } = req.body;
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    if (existingUser)
       return res.status(400).json({ error: "Email already in use." });
-    }
+
     const existingName = await User.findOne({ username });
-    if (existingName) {
-      return res.status(400).json({ error: "username already in use." });
-    }
+    if (existingName)
+      return res.status(400).json({ error: "Username already in use." });
 
     let isUserAdmin = false;
     if (adminCode === process.env.ADMIN_SECRET) {
@@ -35,7 +50,6 @@ router.post("/signup", async (req, res) => {
       password,
       isAdmin: isUserAdmin,
     });
-
     await newUser.save();
 
     const token = jwt.sign(
@@ -44,9 +58,15 @@ router.post("/signup", async (req, res) => {
       { expiresIn: "1d" },
     );
 
+    // FIXED: Set cookie container
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.status(201).json({
       message: "Account created successfully!",
-      token: `Bearer ${token}`,
       user: {
         id: newUser._id,
         username: newUser.username,
@@ -55,7 +75,6 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Signup error:", error);
     res.status(500).json({ error: "Server error. Please try again." });
   }
 });
@@ -66,40 +85,30 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-
     const user = await User.findOne({ username });
 
-    console.log("--- LOGIN DEBUG ---");
-    console.log("Frontend sent username:", username);
-    console.log("Database found user?:", user ? "YES" : "NO");
-
-    if (!user) {
+    if (!user)
       return res.status(400).json({ error: "Invalid username or password." });
-    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-
-    console.log("Password matched?:", isMatch);
-    console.log("-------------------");
-
-    if (!isMatch) {
+    if (!isMatch)
       return res.status(400).json({ error: "Invalid username or password." });
-    }
 
-    // Generate JWT Token
     const token = jwt.sign(
-      {
-        id: user._id,
-        username: user.username,
-        isAdmin: user.isAdmin,
-      },
+      { id: user._id, username: user.username, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }, // Fixed typo: changed "Id" to "1d" (1 day)
+      { expiresIn: "1d" },
     );
+
+    // FIXED: Send token via httpOnly cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       message: "Login successful!",
-      token: `Bearer ${token}`,
       user: {
         id: user._id,
         username: user.username,
@@ -110,7 +119,6 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
     res.status(500).json({ error: "Server error. Please try again." });
   }
 });
@@ -118,31 +126,23 @@ router.post("/login", async (req, res) => {
 // ==========================================
 // 3. FIXED: ROUTE: PUT /api/auth/update (Now standalone!)
 // ==========================================
-router.put("/update", async (req, res) => {
+router.put("/update", protect, async (req, res) => {
+  // FIXED: Added protect middleware
   try {
-    const { userId, username, name, email, phone, address } = req.body;
+    const userId = req.userId; // FIXED: Pulled safely directly from verified token token data
+    const { username, name, email, phone, address } = req.body;
 
-    // --- START: VALIDATION ---
-    // Check if the new username is already taken by another user
     const existingUsername = await User.findOne({
-      username: username,
-      _id: { $ne: userId }, // $ne means "not equal"
-    });
-    if (existingUsername) {
-      return res.status(400).json({ error: "Username is already in use." });
-    }
-
-    // Check if the new email is already taken by another user
-    const existingEmail = await User.findOne({
-      email: email,
+      username,
       _id: { $ne: userId },
     });
-    if (existingEmail) {
-      return res.status(400).json({ error: "Email is already in use." });
-    }
-    // --- END: VALIDATION ---
+    if (existingUsername)
+      return res.status(400).json({ error: "Username is already in use." });
 
-    // 1. Determine if the profile is now complete
+    const existingEmail = await User.findOne({ email, _id: { $ne: userId } });
+    if (existingEmail)
+      return res.status(400).json({ error: "Email is already in use." });
+
     const isProfileComplete = !!(
       name &&
       phone &&
@@ -152,7 +152,6 @@ router.put("/update", async (req, res) => {
       address?.zipCode
     );
 
-    // 2. Construct the update payload
     const updateData = {
       username,
       name,
@@ -165,16 +164,13 @@ router.put("/update", async (req, res) => {
         zipCode: address.zipCode,
         country: "USA",
       },
-      fullP: isProfileComplete, // 3. Set the fullP flag
+      fullP: isProfileComplete,
     };
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
     });
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: "User not found." });
-    }
+    if (!updatedUser) return res.status(404).json({ error: "User not found." });
 
     res.status(200).json({
       message: "Profile updated successfully!",
@@ -184,13 +180,12 @@ router.put("/update", async (req, res) => {
         name: updatedUser.name,
         email: updatedUser.email,
         isAdmin: updatedUser.isAdmin,
-        fullP: updatedUser.fullP, // 4. Return the new fullP status
+        fullP: updatedUser.fullP,
         phoneNumber: updatedUser.phoneNumber,
         address: updatedUser.address,
       },
     });
   } catch (error) {
-    console.error("Database update error:", error);
     res.status(500).json({ error: "Server error. Failed to update profile." });
   }
 });
