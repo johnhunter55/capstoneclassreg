@@ -219,7 +219,7 @@ router.post(
       if (req.user.fullP === false) {
         return res.status(403).json({
           message:
-            "Action Denied: You do not have full privileges (fullP) to sign up for classes.",
+            "complete profile information before adding courses to your schedule",
         });
       }
 
