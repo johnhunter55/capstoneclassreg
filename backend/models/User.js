@@ -40,9 +40,9 @@ const userSchema = new mongoose.Schema(
       country: { type: String, trim: true, default: "USA" },
     },
     phoneNumber: {
-      type: Number,
-      minlength: 10,
-      maxlength: 10,
+      type: String,
+      minlength: [10, "Phone number must be exactly 10 digits"],
+      maxlength: [10, "Phone number must be exactly 10 digits"],
     },
     schedule: [
       {
