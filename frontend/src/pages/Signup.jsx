@@ -7,24 +7,40 @@ export function Signup() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedRow, setExpandedRow] = useState(null);
-
+  const [enrolledIds, setEnrolledIds] = useState([]);
   // NEW: Search state
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("http://localhost:3002/api/courses", {
+        // 1. Fetch all available courses
+        const coursesRes = await fetch("http://localhost:3002/api/courses", {
           method: "GET",
           credentials: "include",
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch courses. Are you logged in?");
+        // 2. Fetch the user's current schedule
+        const scheduleRes = await fetch(
+          "http://localhost:3002/api/auth/my-schedule",
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+
+        if (!coursesRes.ok || !scheduleRes.ok) {
+          throw new Error("Failed to fetch data. Are you logged in?");
         }
 
-        const data = await response.json();
-        setCourses(data);
+        const coursesData = await coursesRes.json();
+        const scheduleData = await scheduleRes.json();
+
+        // 3. Extract just the IDs of the courses the user is enrolled in
+        const myIds = scheduleData.map((course) => course._id);
+
+        setCourses(coursesData);
+        setEnrolledIds(myIds); // <-- Save them to state!
       } catch (err) {
         setError(err.message);
       } finally {
@@ -32,7 +48,7 @@ export function Signup() {
       }
     };
 
-    fetchCourses();
+    fetchData();
   }, []);
 
   // NEW: Function to toggle the details dropdown
@@ -55,15 +71,14 @@ export function Signup() {
         },
       );
 
-      // NEW: Read the actual backend error message instead of a generic one!
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to add course.");
       }
 
-      alert("Course added successfully!");
+      // NEW: Add the ID to the local state so the button vanishes instantly!
+      setEnrolledIds((prevIds) => [...prevIds, courseId]);
     } catch (err) {
-      // This will now pop up with the exact "Action Denied" message from the backend
       alert(err.message);
     }
   };
@@ -141,14 +156,20 @@ export function Signup() {
                           )}
                         </button>
 
-                        {/* Add Course Button */}
-                        <button
-                          onClick={() => handleAddCourse(cls._id)}
-                          className="p-2 bg-rose-900 hover:bg-rose-800 text-white rounded-full transition-all outline-none shadow-md hover:shadow-lg hover:scale-105"
-                          title="Add Course"
-                        >
-                          <FaPlus size={16} />
-                        </button>
+                        {/* Add Course Button OR Enrolled Badge */}
+                        {enrolledIds.includes(cls._id) ? (
+                          <span className="px-3 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 rounded-full text-xs font-bold tracking-wide shadow-sm">
+                            Enrolled
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleAddCourse(cls._id)}
+                            className="p-2 bg-rose-900 hover:bg-rose-800 text-white rounded-full transition-all outline-none shadow-md hover:shadow-lg hover:scale-105"
+                            title="Add Course"
+                          >
+                            <FaPlus size={16} />
+                          </button>
+                        )}
                       </td>
                     </tr>
 
