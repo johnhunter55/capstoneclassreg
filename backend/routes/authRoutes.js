@@ -7,22 +7,6 @@ import passport from "passport"; // <-- Import passport
 const { TokenExpiredError } = jwt;
 const router = express.Router();
 
-const protect = async (req, res, next) => {
-  const token = req.cookies.token; // Grab token from cookies container
-
-  if (!token) {
-    return res.status(401).json({ error: "Not authorized, please login." });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id; // Attach user ID to request object
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: "Session expired or invalid token." });
-  }
-};
-
 // ==========================================
 // 1. ROUTE: POST /api/auth/signup
 // ==========================================
@@ -222,6 +206,60 @@ router.get(
       });
     } catch (error) {
       res.status(500).json({ error: "Server error validating session." });
+    }
+  },
+);
+
+router.post(
+  "/add-course",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res, next) => {
+    try {
+      // 1. Check if the user has fullP privileges
+      if (req.user.fullP === false) {
+        return res.status(403).json({
+          message:
+            "complete profile information before adding courses to your schedule",
+        });
+      }
+
+      // 2. If they pass the check, add the course
+      const { courseId } = req.body;
+
+      await User.findByIdAndUpdate(
+        req.user._id,
+        { $addToSet: { schedule: courseId } },
+        { new: true },
+      );
+
+      res
+        .status(200)
+        .json({ message: "Course successfully added to schedule!" });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// ==========================================
+// 6. ROUTE: GET /my-schedule (Fetches the user's classes)
+// ==========================================
+router.get(
+  "/my-schedule",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res, next) => {
+    try {
+      // .populate("schedule") swaps the saved ObjectIds with the actual Course data
+      const user = await User.findById(req.user._id).populate("schedule");
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Send back just the array of courses
+      res.status(200).json(user.schedule);
+    } catch (error) {
+      next(error);
     }
   },
 );

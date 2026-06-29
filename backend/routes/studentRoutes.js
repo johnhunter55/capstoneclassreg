@@ -29,6 +29,31 @@ router.post("/schedule", protect, async (req, res, next) => {
     student.schedule.push(courseId);
     await student.save();
 
+  // ✅ CORRECTED
+  try {
+    const { courseId } = req.body;
+    const userId = req.user._id;
+
+    // ... rest of your code ...
+
+    // 1. Verify that the class actually exists in MongoDB
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found." });
+    } // 2. Grab the student document
+    const student = await User.findById(userId);
+
+    // 3. Prevent duplicate selections
+    if (student.schedule.includes(courseId)) {
+      return res
+        .status(400)
+        .json({ error: "This course is already in your schedule." });
+    }
+
+    // 4. Push the course ID into the schedule array and save
+    student.schedule.push(courseId);
+    await student.save();
+
     res.status(200).json({
       message: `Successfully registered for ${course.title || "the course"}!`,
       schedule: student.schedule,
