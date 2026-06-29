@@ -189,7 +189,7 @@ export function Admincontrols() {
           <table className="min-w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 transition-colors">
-                <th className="p-4 w-12"></th>{" "}
+                <th className="p-4 w-12"></th>
                 {/* Column for the drop-down arrow */}
                 <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
                   Name
