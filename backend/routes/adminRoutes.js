@@ -162,6 +162,7 @@ router.patch("/users/:id/role", async (req, res, next) => {
   }
 });
 
+<<<<<<< Updated upstream
 // ============================================================
 // ROUTE 5: DELETE /api/admin/users/:userId/schedule/:courseId
 // DESCRIPTION: Administratively remove a course from a user's schedule
@@ -194,6 +195,9 @@ router.delete("/users/:userId/schedule/:courseId", async (req, res, next) => {
 // ============================================================
 // ROUTE 6: DELETE /api/admin/users/:id (Permanently delete user)
 // ============================================================
+=======
+//  Route 5 DELETE /api/admin/users/:id (Permanently delete user)
+>>>>>>> Stashed changes
 router.delete("/users/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -224,27 +228,40 @@ router.delete("/users/:id", async (req, res, next) => {
 router.post("/courses", async (req, res, next) => {
   try {
     // Assuming your Course schema looks for title, description, code, etc.
-    const { title, description, code, creditHours } = req.body;
+    const {
+      courseId,
+      courseTitle,
+      courseDescription,
+      classroomNumber,
+      capacity,
+      creditHours,
+      tuitionCost,
+    } = req.body;
 
-    if (!title || !code) {
+    if (!courseId || !code) {
       return res
         .status(400)
-        .json({ error: "Course title and course code are required." });
+        .json({ error: "Course id and course code are required." });
     }
 
     // Check for unique course code conflicts
-    const existingCourse = await Course.findOne({ code: code.toUpperCase() });
+    const cleanCourseId = courseId.toUpperCase().trim();
+    const existingCourse = await Course.findOne({ courseId: cleanCourseId });
     if (existingCourse) {
       return res
         .status(400)
-        .json({ error: "A course with this code already exists." });
+        .json({ error: "A course with this course code already exists." });
     }
 
     const newCourse = new Course({
-      title,
-      description,
-      code: code.toUpperCase(),
-      creditHours: creditHours || 3, // Fallback value if your model uses credits
+      courseId: cleanCourseId,
+      courseTitle: courseTitle.trim(),
+      courseDescription: courseDescription ? courseDescription.trim() : "",
+      classroomNumber: classroomNumber ? classroomNumber.trim() : "",
+      capacity: capacity !== undefined ? capacity : 30, // Default baseline matching your schema
+      creditHours: creditHours || 0,
+      tuitionCost: tuitionCost || "",
+      enrolledStudents: [], // Start with an empty roster array // Fallback value if your model uses credits
     });
 
     await newCourse.save();
@@ -263,26 +280,41 @@ router.post("/courses", async (req, res, next) => {
 router.put("/courses/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, code, credits } = req.body;
+    const {
+      courseId,
+      courseTitle,
+      courseDescription,
+      classroomNumber,
+      capacity,
+      creditHours,
+      tuitionCost,
+    } = req.body;
 
     const course = await Course.findById(id);
     if (!course) {
       return res.status(404).json({ error: "Course not found." });
     }
-
-    // If changing the unique code, check for conflicts
-    if (code && code.toUpperCase() !== course.code) {
-      const conflict = await Course.findOne({ code: code.toUpperCase() });
-      if (conflict)
-        return res
-          .status(400)
-          .json({ error: "Another course is already using this code." });
-      course.code = code.toUpperCase();
+    // If changing the unique course code parameter, protect against collisions
+    if (courseId) {
+      const cleanCourseId = courseId.toUpperCase().trim();
+      if (cleanCourseId !== course.courseId) {
+        const conflict = await Course.findOne({ courseId: cleanCourseId });
+        if (conflict) {
+          return res.status(400).json({
+            error: "Another course is already using this course code.",
+          });
+        }
+        course.courseId = cleanCourseId;
+      }
     }
 
-    if (title !== undefined) course.title = title;
-    if (description !== undefined) course.description = description;
-    if (credits !== undefined) course.credits = credits;
+    if (courseTitle !== undefined) course.courseTitle = courseTitle.trim();
+    if (courseDescription !== undefined)
+      course.courseDescription = courseDescription;
+    if (classroomNumber !== undefined) course.classroomNumber = classroomNumber;
+    if (capacity !== undefined) course.capacity = capacity;
+    if (creditHours !== undefined) course.creditHours = creditHours;
+    if (tuitionCost !== undefined) course.tuitionCost = tuitionCost;
 
     await course.save();
     res.status(200).json({ message: "Course updated successfully.", course });
@@ -291,6 +323,7 @@ router.put("/courses/:id", async (req, res, next) => {
   }
 });
 
+<<<<<<< Updated upstream
 // ============================================================
 // ROUTE: POST /api/admin/users
 // DESCRIPTION: Administratively create a brand new user account
@@ -331,10 +364,32 @@ router.post("/users", async (req, res, next) => {
     res.status(201).json({
       message: "User created successfully.",
       user: userResponse,
+=======
+// ROUTE 8: DELETE /api/admin/courses/:id
+// DESCRIPTION: Permanently remove a course and clean up all student schedules
+
+router.delete("/courses/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params; // Expects the MongoDB Document _id
+
+    const deletedCourse = await Course.findByIdAndDelete(id);
+    if (!deletedCourse) {
+      return res.status(404).json({ error: "Course not found." });
+    }
+    // Dynamic Clean up: Hunt down every student document containing this course ID
+    // in their schedule array and strip it out so references don't break.
+    await User.updateMany({ schedule: id }, { $pull: { schedule: id } });
+
+    res.status(200).json({
+      message: `Course '${deletedCourse.courseTitle} (${deletedCourse.courseId})' has been permanently deleted and dropped from all student schedules.`,
+>>>>>>> Stashed changes
     });
   } catch (error) {
     next(error);
   }
 });
+<<<<<<< Updated upstream
 
 export default router;
+=======
+>>>>>>> Stashed changes
