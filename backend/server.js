@@ -45,7 +45,33 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong!" });
 });
+// 7 Global error handling middleware (must take 4 parameters: err, req, res, next)
+app.use((err, req, res, next) => {
+  console.error("❌ Global Error Handler Triggered:", err.stack || err.message);
 
-// 7. Server Listener
+  // Catch Mongoose duplicate key errors (like trying to register an existing email)
+  if (err.code === 11000) {
+    return res
+      .status(400)
+      .json({
+        error:
+          "Unique validation constraint failed. Field value already exists.",
+      });
+  }
+
+  // Catch general validation or casting errors (like passing an invalid MongoDB ObjectId)
+  if (err.name === "CastError") {
+    return res
+      .status(400)
+      .json({ error: "Resource item not found. Invalid ID format." });
+  }
+
+  // Standard fallback server error status code
+  res.status(err.status || 500).json({
+    error: err.message || "An unexpected database or server error occurred.",
+  });
+});
+
+// 8. Server Listener
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
