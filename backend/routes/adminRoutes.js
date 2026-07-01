@@ -162,42 +162,7 @@ router.patch("/users/:id/role", async (req, res, next) => {
   }
 });
 
-<<<<<<< Updated upstream
-// ============================================================
-// ROUTE 5: DELETE /api/admin/users/:userId/schedule/:courseId
-// DESCRIPTION: Administratively remove a course from a user's schedule
-// ============================================================
-router.delete("/users/:userId/schedule/:courseId", async (req, res, next) => {
-  try {
-    const { userId, courseId } = req.params;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found." });
-    }
-
-    // Use Mongoose .pull() to remove the courseId from the schedule array
-    user.schedule.pull(courseId);
-    await user.save();
-
-    // We need to send back the updated user with a populated schedule
-    const updatedUser = await User.findById(userId).populate("schedule");
-
-    res.status(200).json({
-      message: "Course dropped successfully from user's schedule.",
-      user: updatedUser,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// ROUTE 6: DELETE /api/admin/users/:id (Permanently delete user)
-// ============================================================
-=======
 //  Route 5 DELETE /api/admin/users/:id (Permanently delete user)
->>>>>>> Stashed changes
 router.delete("/users/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -238,7 +203,7 @@ router.post("/courses", async (req, res, next) => {
       tuitionCost,
     } = req.body;
 
-    if (!courseId || !code) {
+    if (!courseId || !courseTitle) {
       return res
         .status(400)
         .json({ error: "Course id and course code are required." });
@@ -323,14 +288,37 @@ router.put("/courses/:id", async (req, res, next) => {
   }
 });
 
-<<<<<<< Updated upstream
+// ROUTE 8: DELETE /api/admin/courses/:id
+// DESCRIPTION: Permanently remove a course and clean up all student schedules
+
+router.delete("/courses/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params; // Expects the MongoDB Document _id
+
+    const deletedCourse = await Course.findByIdAndDelete(id);
+    if (!deletedCourse) {
+      return res.status(404).json({ error: "Course not found." });
+    }
+    // Dynamic Clean up: Hunt down every student document containing this course ID
+    // in their schedule array and strip it out so references don't break.
+    await User.updateMany({ schedule: id }, { $pull: { schedule: id } });
+
+    res.status(200).json({
+      message: `Course '${deletedCourse.courseTitle} (${deletedCourse.courseId})' has been permanently deleted and dropped from all student schedules.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ============================================================
 // ROUTE: POST /api/admin/users
 // DESCRIPTION: Administratively create a brand new user account
 // ============================================================
 router.post("/users", async (req, res, next) => {
   try {
-    const { username, email, password, name, isAdmin } = req.body;
+    const { username, email, password, name, phone, address, isAdmin } =
+      req.body;
 
     // 1. Validate required fields
     if (!username || !email || !password) {
@@ -353,6 +341,14 @@ router.post("/users", async (req, res, next) => {
       email,
       password, // Note: Ensure your User.js model has a pre('save') hook to hash this!
       name: name || "",
+      phoneNumber: phone || "",
+      address: {
+        street: address?.street || "",
+        city: address?.city || "",
+        state: address?.state || "",
+        zipCode: address?.zipCode || "",
+        country: "USA",
+      },
       isAdmin: isAdmin || false,
     });
 
@@ -364,32 +360,10 @@ router.post("/users", async (req, res, next) => {
     res.status(201).json({
       message: "User created successfully.",
       user: userResponse,
-=======
-// ROUTE 8: DELETE /api/admin/courses/:id
-// DESCRIPTION: Permanently remove a course and clean up all student schedules
-
-router.delete("/courses/:id", async (req, res, next) => {
-  try {
-    const { id } = req.params; // Expects the MongoDB Document _id
-
-    const deletedCourse = await Course.findByIdAndDelete(id);
-    if (!deletedCourse) {
-      return res.status(404).json({ error: "Course not found." });
-    }
-    // Dynamic Clean up: Hunt down every student document containing this course ID
-    // in their schedule array and strip it out so references don't break.
-    await User.updateMany({ schedule: id }, { $pull: { schedule: id } });
-
-    res.status(200).json({
-      message: `Course '${deletedCourse.courseTitle} (${deletedCourse.courseId})' has been permanently deleted and dropped from all student schedules.`,
->>>>>>> Stashed changes
     });
   } catch (error) {
     next(error);
   }
 });
-<<<<<<< Updated upstream
 
 export default router;
-=======
->>>>>>> Stashed changes

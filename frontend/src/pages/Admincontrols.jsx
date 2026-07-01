@@ -6,6 +6,17 @@ export function Admincontrols() {
   const [expandedUserId, setExpandedUserId] = useState(null); // Tracks the open row
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // --- STATE FOR CREATING A USER ---
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    username: "",
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+    address: { street: "", city: "", state: "", zipCode: "" },
+    isAdmin: false,
+  });
 
   const API_BASE_URL = "http://localhost:3002/api/admin";
 
@@ -30,6 +41,20 @@ export function Admincontrols() {
       setLoading(false);
     }
   };
+  // Listen for the Header telling us a new user was created
+  useEffect(() => {
+    const handleNewUserAdded = (event) => {
+      const brandNewUser = event.detail;
+      // Add the user to the top of the table instantly
+      setUsers((prevUsers) => [brandNewUser, ...prevUsers]);
+    };
+
+    window.addEventListener("userAdded", handleNewUserAdded);
+
+    return () => {
+      window.removeEventListener("userAdded", handleNewUserAdded);
+    };
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -179,10 +204,9 @@ export function Admincontrols() {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto w-full transition-colors duration-200">
-      <h1 className="text-3xl font-bold mb-6 text-neutral-900 dark:text-white">
+      <h1 className="text-3xl flex justify-center font-bold mb-6 text-neutral-900 dark:text-white">
         Admin Control Panel
       </h1>
-
       {/* Users Table Card */}
       <div className="bg-white dark:bg-neutral-900 shadow-sm border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden transition-colors">
         <div className="overflow-x-auto">
