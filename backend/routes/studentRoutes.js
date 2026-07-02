@@ -112,16 +112,18 @@ router.delete("/schedule/:courseId", protect, async (req, res, next) => {
     }
 
     // 4. TWO-WAY CLEANUP: Atomically remove cross-references from BOTH arrays
+    // Update the student using standard Mongoose pulls
     student.schedule.pull(courseId);
     await student.save();
 
-    course.enrolledStudents.pull(userId);
-    await course.save();
+    // Use .updateOne() to bypass full document validation and strictly modify the array
+    await Course.updateOne(
+      { _id: courseId },
+      { $pull: { enrolledStudents: userId } },
+    );
 
-    // FIXED: Uniformly uses next(error) instead of a standalone 500 response block
-    // to keep it centralized with your server's global error handler handler pattern.
     res.status(200).json({
-      message: `Successfully dropped ${course.courseTitle}.`,
+      message: `Successfully dropped ${course.courseTitle || "the course"}.`,
       schedule: student.schedule,
     });
   } catch (error) {

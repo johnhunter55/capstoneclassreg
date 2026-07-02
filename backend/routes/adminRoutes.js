@@ -305,7 +305,6 @@ router.delete("/courses/:id", async (req, res, next) => {
 
     res.status(200).json({
       message: `Course '${deletedCourse.courseTitle} (${deletedCourse.courseId})' has been permanently deleted and dropped from all student schedules.`,
-<<<<<<< Updated upstream
     });
   } catch (error) {
     next(error);
@@ -361,8 +360,6 @@ router.post("/users", async (req, res, next) => {
     res.status(201).json({
       message: "User created successfully.",
       user: userResponse,
-=======
->>>>>>> Stashed changes
     });
   } catch (error) {
     next(error);
