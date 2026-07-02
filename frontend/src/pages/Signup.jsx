@@ -90,13 +90,39 @@ export function Signup() {
         },
       );
 
+      // Safer error handling to prevent React from crashing
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to add course.");
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || errorData.message || "Failed to add course.",
+          );
+        } else {
+          throw new Error(
+            "Server crashed! Check your Node.js backend terminal.",
+          );
+        }
       }
 
-      // NEW: Add the ID to the local state so the button vanishes instantly!
+      // 1. Instantly update the Enrolled badge
       setEnrolledIds((prevIds) => [...prevIds, courseId]);
+
+      // 2. Instantly update the 0/30 UI capacity counter
+      setCourses((prevCourses) =>
+        prevCourses.map((course) => {
+          if (course._id === courseId) {
+            return {
+              ...course,
+              enrolledStudents: [
+                ...(course.enrolledStudents || []),
+                "new-student",
+              ],
+            };
+          }
+          return course;
+        }),
+      );
     } catch (err) {
       alert(err.message);
     }
@@ -206,13 +232,20 @@ export function Signup() {
                                 Course Description:{" "}
                               </span>
                               {cls["Course Description"] ||
+                                cls.courseDescription ||
                                 "No description provided."}
                             </p>
                             <p>
                               <span className="font-bold text-gray-900 dark:text-white">
                                 Capacity:{" "}
                               </span>
-                              {cls["Capacity"] || "N/A"}
+                              {/* Safely get the length of the enrolled array, then show the max capacity */}
+                              <span className="text-indigo-600 dark:text-indigo-400 font-bold">
+                                {cls.enrolledStudents
+                                  ? cls.enrolledStudents.length
+                                  : 0}
+                              </span>{" "}
+                              / {cls.capacity || cls["Capacity"] || 30}
                             </p>
                           </div>
                         </td>

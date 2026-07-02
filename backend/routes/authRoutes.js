@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import passport from "passport"; // <-- Import passport
+import Course from "../models/Courses.js";
 
 const { TokenExpiredError } = jwt;
 const router = express.Router();
@@ -220,19 +221,39 @@ router.post(
       // 1. Check if the user has fullP privileges
       if (req.user.fullP === false) {
         return res.status(403).json({
-          message:
-            "complete profile information before adding courses to your schedule",
+          error:
+            "Complete profile information before adding courses to your schedule.",
         });
       }
 
-      // 2. If they pass the check, add the course
       const { courseId } = req.body;
+      const userId = req.user._id;
 
-      await User.findByIdAndUpdate(
-        req.user._id,
-        { $addToSet: { schedule: courseId } },
-        { new: true },
-      );
+      // 2. Fetch the course to check capacity
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ error: "Course not found." });
+      }
+
+      // 3. Enforce capacity limits safely
+      const enrolledCount = course.enrolledStudents
+        ? course.enrolledStudents.length
+        : 0;
+      const capacity = course.capacity || 30;
+      if (enrolledCount >= capacity) {
+        return res
+          .status(400)
+          .json({ error: "This course has reached its maximum capacity." });
+      }
+
+      // 4. Safely update BOTH the student and the course using $addToSet
+      // (This creates the array if it's missing, and prevents duplicate signups!)
+      await User.findByIdAndUpdate(userId, {
+        $addToSet: { schedule: courseId },
+      });
+      await Course.findByIdAndUpdate(courseId, {
+        $addToSet: { enrolledStudents: userId },
+      });
 
       res
         .status(200)

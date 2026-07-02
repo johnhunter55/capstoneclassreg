@@ -182,13 +182,19 @@ export function Home() {
                               Course Description:{" "}
                             </span>
                             {cls["Course Description"] ||
+                              cls.courseDescription ||
                               "No description provided."}
                           </p>
                           <p>
                             <span className="font-bold text-gray-900 dark:text-white">
                               Capacity:{" "}
                             </span>
-                            {cls["Capacity"] || "N/A"}
+                            <span className="text-indigo-600 dark:text-indigo-400 font-bold">
+                              {cls.enrolledStudents
+                                ? cls.enrolledStudents.length
+                                : 0}
+                            </span>{" "}
+                            / {cls.capacity || cls["Capacity"] || 30}
                           </p>
                         </div>
                       </td>
