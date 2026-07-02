@@ -317,7 +317,7 @@ router.delete("/courses/:id", async (req, res, next) => {
 // ============================================================
 router.post("/users", async (req, res, next) => {
   try {
-    const { username, email, password, name, phone, address, isAdmin } =
+    const { username, email, password, name, phone, address, isAdmin, fullP } =
       req.body;
 
     // 1. Validate required fields
@@ -350,6 +350,7 @@ router.post("/users", async (req, res, next) => {
         country: "USA",
       },
       isAdmin: isAdmin || false,
+      fullP: fullP || false, // Pass the `fullP` value from the request
     });
 
     await newUser.save();

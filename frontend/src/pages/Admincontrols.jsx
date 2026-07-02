@@ -16,6 +16,7 @@ export function Admincontrols() {
     phone: "",
     address: { street: "", city: "", state: "", zipCode: "" },
     isAdmin: false,
+    fullP: true,
   });
 
   const API_BASE_URL = "http://localhost:3002/api/admin";
@@ -138,6 +139,7 @@ export function Admincontrols() {
           email: selectedUser.email,
           phone: selectedUser.phoneNumber, // Corrected from 'phone'
           address: selectedUser.address, // Now passing full address object!
+          fullP: selectedUser.fullP, // <-- Add this line to preserve the status
         }),
       });
 

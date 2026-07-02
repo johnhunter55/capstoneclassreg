@@ -18,6 +18,7 @@ export function Header() {
     phone: "",
     address: { street: "", city: "", state: "", zipCode: "" },
     isAdmin: false,
+    fullP: true,
   });
 
   // --- STATE: NEW COURSE ---
@@ -100,6 +101,7 @@ export function Header() {
         phone: "",
         address: { street: "", city: "", state: "", zipCode: "" },
         isAdmin: false,
+        fullP: true,
       });
       setIsAddModalOpen(false);
 
@@ -113,7 +115,7 @@ export function Header() {
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3002/api/courses", {
+      const res = await fetch("http://localhost:3002/api/admin/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

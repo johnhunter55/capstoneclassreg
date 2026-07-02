@@ -12,6 +12,25 @@ export function Signup() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    // This function will be called when the 'courseAdded' event is dispatched
+    const handleCourseAdded = (event) => {
+      const newCourse = event.detail;
+
+      // Add the new course to the existing list in state
+      setCourses((prevCourses) => [...prevCourses, newCourse]);
+    };
+
+    // Set up the event listener
+    window.addEventListener("courseAdded", handleCourseAdded);
+
+    // Clean up the event listener when the component unmounts
+    // to prevent memory leaks
+    return () => {
+      window.removeEventListener("courseAdded", handleCourseAdded);
+    };
+  }, []); // The empty dependency array ensures this effect runs only once on mount
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         // 1. Fetch all available courses
